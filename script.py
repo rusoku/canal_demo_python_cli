@@ -84,13 +84,14 @@ try:
             data = bytes(read_msg.data[:read_msg.sizeData])
 
             print(f"Received frame:", end=" ")
+            print(f"TIMESTAMP=0x{read_msg.timestamp:08X}", end=" ")
 
             if is_bit_set(msg.flags, 1):
                 print("EXTENDED:", end=" ")
             else:
                 print("STANDARD:", end=" ")
 
-            print(f"ID=0x{read_msg.id:03X}", end=" ")
+            print(f"ID=0x{read_msg.id:08X}", end=" ")
 
             print(f"DLC={read_msg.sizeData}  DATA="
                 + " ".join(f"{read_msg.data[i]:02X}" for i in range(read_msg.sizeData))
