@@ -10,6 +10,9 @@ canal = ctypes.CDLL('Canal.dll')
 CANAL_ERROR = -1  # just as example
 CANAL_SUCCESS = 0
 
+def is_bit_set(b, bit):
+    return (b & (1 << bit)) != 0
+
 # Prepare function prototypes
 
 # long CanalOpen(const char *pConfigStr, unsigned long flags);
@@ -24,11 +27,12 @@ canal.CanalClose.restype = ctypes.c_long
 # struct CanalMsg is user-defined; define it in Python
 class CanalMsg(ctypes.Structure):
     _fields_ = [
-        ("id", ctypes.c_uint32),
         ("flags", ctypes.c_uint32),
-        ("timestamp", ctypes.c_uint32),
-        ("sizeData", ctypes.c_uint32),
-        ("data", ctypes.c_uint8 * 8)  # CAN data up to 8 bytes
+        ("obid", ctypes.c_uint32),
+        ("id", ctypes.c_uint32),
+        ("sizeData", ctypes.c_uint8),
+        ("data", ctypes.c_uint8 * 8),  # CAN data up to 8 bytes
+        ("timestamp", ctypes.c_uint32)
     ]
 
 canal.CanalSend.argtypes = [ctypes.c_long, ctypes.POINTER(CanalMsg)]
@@ -78,7 +82,20 @@ try:
         if res == CANAL_SUCCESS:
             # Print details
             data = bytes(read_msg.data[:read_msg.sizeData])
-            print(f"Received frame: id=0x{read_msg.id:X}, data={data}, timestamp={read_msg.timestamp}")
+
+            print(f"Received frame:", end=" ")
+
+            if is_bit_set(msg.flags, 1):
+                print("EXTENDED:", end=" ")
+            else:
+                print("STANDARD:", end=" ")
+
+            print(f"ID=0x{read_msg.id:03X}", end=" ")
+
+            print(f"DLC={read_msg.sizeData}  DATA="
+                + " ".join(f"{read_msg.data[i]:02X}" for i in range(read_msg.sizeData))
+            )
+
         else:
             # No message or error, depending on implementation
             # Sleep a little to avoid busy loop
